@@ -4,12 +4,12 @@
 \alias{saveBtcr}
 \title{save the BTCR data to a csv file}
 \usage{
-saveBtcr(btcr, outfile)
+saveBtcr(btcr, outpath = ".")
 }
 \arguments{
 \item{btcr}{A BTCR object.}
 
-\item{outfile}{The path to file to write in. It should be with a "csv" suffix.}
+\item{outpath}{The path to save data.}
 }
 \description{
 save the BTCR data to a csv file

@@ -256,34 +256,102 @@ calcOverlap <- function(btcr, scrna, groupby, splitby = NULL, id = c("final_clon
 #' save the BTCR data to a csv file
 #'
 #' @param btcr A BTCR object.
-#' @param outfile The path to file to write in. It should be with a "csv" suffix.
+#' @param outpath The path to save data.
 #' @export
-saveBtcr <- function(btcr, outfile) {
-    dt <- btcr$merge
+saveBtcr <- function(btcr, outpath = ".") {
+    data_save <- list(
+        final = dt$merge
+    )
     if (!endsWith(outfile, "csv")) {
         warning("Results will saved as comma seperated values file. But outfile has no 'csv' suffix")
     }
-    overlaps <- attributes(btcr)$overlaps
 
-    if (!is.null(overlaps)) {
-        dt$overlaps <- "unique"
-        groupby <- attributes(btcr)$group
-        splitby <- attributes(btcr)$split
-        id <- attributes(btcr)$id
-        message(groupby, splitby, id)
+    btcr_attr <- attributes(btcr)
+    for (btattr in names(btcr_attr)) {
+        if (btattr == "overlaps") {
+            dt <- data_save$final
+            overlaps <- btcr_attr$overlaps
 
-        groups <- names(overlaps)
-        for (grp in groups) {
-            curoverlaps <- overlaps[[grp]]
-            innerov <- names(curoverlaps)
-            for (ov in innerov) {
-                if (length(groups) == 1 && groups == "all") {
-                    dt[dt[, id] %in% curoverlaps[[ov]], "overlaps"] <- ov
-                } else {
-                    dt[dt[, splitby] == grp & dt[, id] %in% curoverlaps[[ov]], "overlaps"] <- ov
+            dt$overlaps <- "unique"
+            groupby <- btcr_attr$group
+            splitby <- btcr_attr$split
+            id <- btcr_attr$id
+            message(groupby, splitby, id)
+            groups <- names(overlaps)
+            for (grp in groups) {
+                curoverlaps <- overlaps[[grp]]
+                innerov <- names(curoverlaps)
+                for (ov in innerov) {
+                    if (length(groups) == 1 && groups == "all") {
+                        dt[dt[, id] %in% curoverlaps[[ov]], "overlaps"] <- ov
+                    } else {
+                        dt[dt[, splitby] == grp & dt[, id] %in% curoverlaps[[ov]], "overlaps"] <- ov
+                    }
                 }
             }
+            data_save$final <- dt
+        } else if (btattr == "annotation") {
+            data_save$antigen <- do.call(rbind, btcr_attr$annotation)
         }
     }
-    write.csv(dt, file = outfile, quote = TRUE, row.names = FALSE)
+
+    for (nm in names(data_save)) {
+        outf <- paste0(attributes(btcr)$CR, "_", nm, ".csv")
+        write.csv(data_save[[nm]], file = file.path(outpath, outf), quote = TRUE, row.names = FALSE)
+    }
+}
+
+
+#' download the lastest vdjdb-db
+#'
+#' @rdname annotateTCR
+getLatestVdjdb <- function() {
+    res <- jsonlite::fromJSON("https://api.github.com/repos/antigenomics/vdjdb-db/releases/latest")
+    temp <- tempfile()
+    download.file(res$assets$browser_download_url, temp)
+    data <-  read.delim(unz(temp, "vdjdb.slim.txt"), check.names = FALSE)
+    unlink(temp)
+    data
+}
+
+#' annotate TCR with vdjdb
+#'
+#' @param btcr A BTCR object.
+#' @param latest Use the latest vdjdb data (auto download).
+annotateTCR <- function(btcr, latest = FALSE) {
+    CR <- attributes(btcr)$type
+    if (CR != "TCR") {
+        stop("annotateTCR only supports TCR, not ", CR)
+    }
+
+    message("Use vdjdb. Please cite it: https://github.com/antigenomics/vdjdb-db.")
+
+    if (latest) {
+        vdjdb <- getLatestVdjdb()
+    } else {
+        data(vdjdb, package = "BTCR")
+    }
+
+    dt <- btcr$merge[, c("barcode", "cdr3s_aa")]
+    dt2 <- sapply(dt$cdr3s_aa, function(cdr3s_aa) {
+        aas <- unique(unlist(strsplit(cdr3s_aa, ";")))
+        tra <- grep("TRA:", aas, value = TRUE)
+        trb <- grep("TRB:", aas, value = TRUE)
+        if (length(tra) == 0) {
+            tra <- "None"
+        }
+        if (length(trb) == 0) {
+            trb <- "None"
+        }
+        aas <- c(tra[1], trb[1])
+        gsub("TR[ABGD]:", "", aas)
+    })
+    dimnames(dt2) <- NULL
+    dt2 <- as.data.frame(t(dt2), row.names = dt$barcode, stringsAsFactors = FALSE)
+    dt2$barcode <- dt$barcode
+    colnames(dt2) <- c("TRA", "TRB", "barcode")
+    dt2_one <- merge(dt2, vdjdb, by.x = "TRA", by.y = "cdr3")
+    dt2_two <- merge(dt2, vdjdb, by.x = "TRB", by.y = "cdr3")
+    attributes(btcr)$annotation <- list(TRA = dt2_one, TRB = dt2_two)
+    btcr
 }
