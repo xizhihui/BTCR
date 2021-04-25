@@ -260,11 +260,11 @@ calcOverlap <- function(btcr, scrna, groupby, splitby = NULL, id = c("final_clon
 #' @export
 saveBtcr <- function(btcr, outpath = ".") {
     data_save <- list(
-        final = dt$merge
+        final = btcr$merge
     )
-    if (!endsWith(outfile, "csv")) {
-        warning("Results will saved as comma seperated values file. But outfile has no 'csv' suffix")
-    }
+    # if (!endsWith(outfile, "csv")) {
+    #     warning("Results will saved as comma seperated values file. But outfile has no 'csv' suffix")
+    # }
 
     btcr_attr <- attributes(btcr)
     for (btattr in names(btcr_attr)) {
@@ -296,7 +296,7 @@ saveBtcr <- function(btcr, outpath = ".") {
     }
 
     for (nm in names(data_save)) {
-        outf <- paste0(attributes(btcr)$CR, "_", nm, ".csv")
+        outf <- paste0(attributes(btcr)$type, "_", nm, ".csv")
         write.csv(data_save[[nm]], file = file.path(outpath, outf), quote = TRUE, row.names = FALSE)
     }
 }
@@ -305,6 +305,7 @@ saveBtcr <- function(btcr, outpath = ".") {
 #' download the lastest vdjdb-db
 #'
 #' @rdname annotateTCR
+#' @export
 getLatestVdjdb <- function() {
     res <- jsonlite::fromJSON("https://api.github.com/repos/antigenomics/vdjdb-db/releases/latest")
     temp <- tempfile()
@@ -318,6 +319,8 @@ getLatestVdjdb <- function() {
 #'
 #' @param btcr A BTCR object.
 #' @param latest Use the latest vdjdb data (auto download).
+#' @return with attribute "annotation" added to btcr.
+#' @export
 annotateTCR <- function(btcr, latest = FALSE) {
     CR <- attributes(btcr)$type
     if (CR != "TCR") {

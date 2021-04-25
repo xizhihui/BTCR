@@ -1,8 +1,8 @@
 Package: BTCR
 Type: Package
 Title: Simple Stats and Plots for BCR and TCR
-Version: 0.1.1
-Date: 2020-11-17
+Version: 0.1.2
+Date: 2021-04-25
 Author: xizhihui
 Maintainer: xizhihui<zhihui_xi@qq.com>
 Description: Barplots to visualize the BCR and TCR data generated from Cellranger Pipelines and interacted with Seurat.

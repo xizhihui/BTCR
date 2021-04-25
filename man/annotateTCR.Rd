@@ -14,6 +14,9 @@ annotateTCR(btcr, latest = FALSE)
 
 \item{latest}{Use the latest vdjdb data (auto download).}
 }
+\value{
+with attribute "annotation" added to btcr.
+}
 \description{
 download the lastest vdjdb-db
 

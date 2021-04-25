@@ -12,7 +12,8 @@ plotCloneDim(btcr, scrna, colorby = c("CR", "cdr3s_aa", "cdr3s_nt"),
 
 \item{scrna}{The Single Cell RNAseq Seurat object corresponded to the BCR or TCR.}
 
-\item{colorby}{can be "CR", "cdr3s_aa", "cdr3s_nt". If "CR", only plot whether a cell has a TCR or BCR. If "cdr3s", use topn or highlight to limit the clonotypes.}
+\item{colorby}{can be "CR", "cdr3s_aa", "cdr3s_nt". If "CR", only plot whether a cell has a TCR or BCR.
+If "cdr3s", use topn or highlight to limit the clonotypes.}
 
 \item{topn}{Top N barcode frequency cdr3s to plot. Will be ignored if highlight is provided.}
 
